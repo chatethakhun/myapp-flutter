@@ -9,25 +9,83 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: "My app",
-      home: HomePage(),
+      home: StateFullHomePage(),
     );
   }
 }
 
-class HomePage extends StatelessWidget {
+class Data {
+  final String text;
+  final String author;
+  final String imageUrl;
+  Data(this.text, this.author, this.imageUrl);
+}
+
+class StateFullHomePage extends StatefulWidget {
   @override
+  _StateFullHomePageState createState() => _StateFullHomePageState();
+}
+
+class _StateFullHomePageState extends State<StateFullHomePage> {
+  @override
+  List<Data> datas = [];
+  final _formKey = GlobalKey<FormState>();
+  String _text;
+  String _author;
+
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
           title: Text("Home Page"),
         ),
-        body: ListView(
+        body: Column(
           children: <Widget>[
-            MyCard('111', 'Yoda', 'https://www.gstatic.com/webp/gallery/4.jpg'),
-            MyCard('111', 'Sky walker',
-                'https://www.gstatic.com/webp/gallery/1.jpg'),
-            MyCard('111', '444', 'https://www.gstatic.com/webp/gallery/2.jpg'),
-            MyCard('111', '444', 'https://www.gstatic.com/webp/gallery/3.jpg'),
+            Form(
+              key: _formKey,
+              child: Column(
+                children: <Widget>[
+                  TextFormField(
+                    decoration: InputDecoration(labelText: "Text"),
+                    onSaved: (String value) {
+                      _text = value;
+                    },
+                  ),
+                  TextFormField(
+                    decoration: InputDecoration(labelText: "Author"),
+                    onSaved: (String value) {
+                      _author = value;
+                    },
+                  ),
+                  RaisedButton(
+                    onPressed: () {
+                      _formKey.currentState.save(); // important
+                      setState(() {
+                        datas.insert(
+                            0,
+                            Data(_text, _author,
+                                'https://www.gstatic.com/webp/gallery/2.jpg'));
+                      });
+
+                      _formKey.currentState.reset();
+                    },
+                    child: Text('Add'),
+                  )
+                ],
+              ),
+            ),
+            Expanded(
+              child: datas.length == 0
+                  ? Center(
+                      child: Text('No data'),
+                    )
+                  : ListView.builder(
+                      itemCount: datas.length,
+                      itemBuilder: (BuildContext context, int index) {
+                        return MyCard(datas[index].text, datas[index].author,
+                            datas[index].imageUrl);
+                      },
+                    ),
+            )
           ],
         ));
   }
