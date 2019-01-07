@@ -1,10 +1,48 @@
+import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+
+class Post {
+  final int userId;
+  final int id;
+  final String title;
+  final String body;
+
+  Post({this.userId, this.id, this.title, this.body});
+
+  factory Post.fromJson(Map<String, dynamic> json) {
+    return Post(
+      userId: json['userId'],
+      id: json['id'],
+      title: json['title'],
+      body: json['body'],
+    );
+  }
+}
+
+Future<Post> fetchPost() async {
+  print('1');
+  final response =
+      await http.get('https://jsonplaceholder.typicode.com/posts/1');
+  if (response.statusCode == 200) {
+    // If the call to the server was successful, parse the JSON
+    return Post.fromJson(json.decode(response.body));
+  } else {
+    // If that call was not successful, throw an error.
+    throw Exception('Failed to load post');
+  }
+}
 
 main() {
   runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
+  Future<Post> posts;
+
+  MyApp({Key key, this.posts}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -29,14 +67,16 @@ class StateFullHomePage extends StatefulWidget {
 class _StateFullHomePageState extends State<StateFullHomePage> {
   @override
   List<Data> datas = [];
+  Future<Post> posts;
   final _formKey = GlobalKey<FormState>();
   String _text;
   String _author;
 
   Widget build(BuildContext context) {
+    print(posts);
     return Scaffold(
         appBar: AppBar(
-          title: Text("Home Page"),
+          title: Text("Fetch Data"),
         ),
         body: Column(
           children: <Widget>[
@@ -85,6 +125,19 @@ class _StateFullHomePageState extends State<StateFullHomePage> {
                             datas[index].imageUrl);
                       },
                     ),
+            ),
+            Center(
+              child: FutureBuilder<Post>(
+                future: fetchPost(),
+                builder: (context, snapshot) {
+                  if (snapshot.hasData) {
+                    return Text(snapshot.data.title);
+                  } else if (snapshot.hasError) {
+                    return Text("${snapshot.error}");
+                  }
+                  return CircularProgressIndicator();
+                },
+              ),
             )
           ],
         ));
