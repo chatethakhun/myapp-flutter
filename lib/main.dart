@@ -2,6 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:myapp/pages/home_page.dart';
+
+final JsonDecoder _decoder = new JsonDecoder();
 
 class Post {
   final int userId;
@@ -10,7 +13,6 @@ class Post {
   final String body;
 
   Post({this.userId, this.id, this.title, this.body});
-
   factory Post.fromJson(Map<String, dynamic> json) {
     return Post(
       userId: json['userId'],
@@ -21,17 +23,13 @@ class Post {
   }
 }
 
-Future<Post> fetchPost() async {
-  print('1');
-  final response =
-      await http.get('https://jsonplaceholder.typicode.com/posts/1');
-  if (response.statusCode == 200) {
-    // If the call to the server was successful, parse the JSON
-    return Post.fromJson(json.decode(response.body));
-  } else {
-    // If that call was not successful, throw an error.
-    throw Exception('Failed to load post');
-  }
+Future<List> getList() async {
+  final response = await http.get('https://jsonplaceholder.typicode.com/posts');
+  Iterable l = json.decode(response.body);
+  List<Post> posts = l.map((i) {
+    return Post.fromJson(i);
+  }).toList();
+  return posts;
 }
 
 main() {
@@ -47,7 +45,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: "My app",
-      home: StateFullHomePage(),
+      home: HomePage(),
     );
   }
 }
@@ -67,7 +65,7 @@ class StateFullHomePage extends StatefulWidget {
 class _StateFullHomePageState extends State<StateFullHomePage> {
   @override
   List<Data> datas = [];
-  Future<Post> posts;
+  Future<List> posts;
   final _formKey = GlobalKey<FormState>();
   String _text;
   String _author;
@@ -80,60 +78,70 @@ class _StateFullHomePageState extends State<StateFullHomePage> {
         ),
         body: Column(
           children: <Widget>[
-            Form(
-              key: _formKey,
-              child: Column(
-                children: <Widget>[
-                  TextFormField(
-                    decoration: InputDecoration(labelText: "Text"),
-                    onSaved: (String value) {
-                      _text = value;
-                    },
-                  ),
-                  TextFormField(
-                    decoration: InputDecoration(labelText: "Author"),
-                    onSaved: (String value) {
-                      _author = value;
-                    },
-                  ),
-                  RaisedButton(
-                    onPressed: () {
-                      _formKey.currentState.save(); // important
-                      setState(() {
-                        datas.insert(
-                            0,
-                            Data(_text, _author,
-                                'https://www.gstatic.com/webp/gallery/2.jpg'));
-                      });
+            // Form(
+            //   key: _formKey,
+            //   child: Column(
+            //     children: <Widget>[
+            //       TextFormField(
+            //         decoration: InputDecoration(labelText: "Text"),
+            //         onSaved: (String value) {
+            //           _text = value;
+            //         },
+            //       ),
+            //       TextFormField(
+            //         decoration: InputDecoration(labelText: "Author"),
+            //         onSaved: (String value) {
+            //           _author = value;
+            //         },
+            //       ),
+            //       RaisedButton(
+            //         onPressed: () {
+            //           _formKey.currentState.save(); // important
+            //           setState(() {
+            //             datas.insert(
+            //                 0,
+            //                 Data(_text, _author,
+            //                     'https://www.gstatic.com/webp/gallery/2.jpg'));
+            //           });
 
-                      _formKey.currentState.reset();
-                    },
-                    child: Text('Add'),
-                  )
-                ],
-              ),
-            ),
-            Expanded(
-              child: datas.length == 0
-                  ? Center(
-                      child: Text('No data'),
-                    )
-                  : ListView.builder(
-                      itemCount: datas.length,
-                      itemBuilder: (BuildContext context, int index) {
-                        return MyCard(datas[index].text, datas[index].author,
-                            datas[index].imageUrl);
-                      },
-                    ),
-            ),
+            //           _formKey.currentState.reset();
+            //         },
+            //         child: Text('Add'),
+            //       )
+            //     ],
+            //   ),
+            // ),
+            // Expanded(
+            //   child: datas.length == 0
+            //       ? Center(
+            //           child: Text('No data'),
+            //         )
+            //       : ListView.builder(
+            //           itemCount: datas.length,
+            //           itemBuilder: (BuildContext context, int index) {
+            //             return MyCard(datas[index].text, datas[index].author,
+            //                 datas[index].imageUrl);
+            //           },
+            //         ),
+            // ),
             Center(
-              child: FutureBuilder<Post>(
-                future: fetchPost(),
+              child: FutureBuilder(
+                future: getList(),
                 builder: (context, snapshot) {
+                  final data = snapshot.data;
+                  print('==>> $data');
                   if (snapshot.hasData) {
-                    return Text(snapshot.data.title);
+                    // return Text(snapshot.data[2].title);
+                    return ListView.builder(
+                      itemCount: data.length,
+                      itemBuilder: (BuildContext context, int index) {
+                        return Card(
+                          child: Text('fffs'),
+                        );
+                      },
+                    );
                   } else if (snapshot.hasError) {
-                    return Text("${snapshot.error}");
+                    // return Text("${snapshot.error}");
                   }
                   return CircularProgressIndicator();
                 },
